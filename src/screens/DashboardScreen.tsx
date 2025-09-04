@@ -6,15 +6,31 @@ const DashboardScreen: React.FC = () => {
 	const navigate = useNavigate()
 	const { 
 		farmerName, 
+		farmerId,
 		plots, 
 		farmDetails, 
 		achievements, 
 		notifications, 
 		totalCarbonCredits,
-		markNotificationRead 
+		markNotificationRead,
+		requestVisitVerification
 	} = useFarmerContext()
 	
 	const [showNotifications, setShowNotifications] = useState(false)
+	const [isVerifying, setIsVerifying] = useState(false)
+	const [verifyResult, setVerifyResult] = useState<string | null>(null)
+
+	const handleRequestVerification = async () => {
+		setIsVerifying(true)
+		setVerifyResult(null)
+		const res = await requestVisitVerification()
+		if (res.ok) {
+			setVerifyResult('Request sent successfully')
+		} else {
+			setVerifyResult(res.error || 'Failed to send request')
+		}
+		setIsVerifying(false)
+	}
 
 	const unreadNotifications = notifications.filter(n => !n.read)
 	const totalArea = plots.reduce((total, plot) => total + plot.area, 0)
@@ -81,6 +97,7 @@ const DashboardScreen: React.FC = () => {
 			<section className="content">
 				<div className="welcome-card">
 					<h2 className="greeting">Hello, {farmerName.split(' ')[0]}!</h2>
+					<p className="muted">Farmer ID: <strong>{farmerId}</strong></p>
 					<p className="muted">Welcome back to your carbon credit dashboard</p>
 					{farmDetails && (
 						<div className="farm-info">
@@ -123,8 +140,20 @@ const DashboardScreen: React.FC = () => {
 							<span className="icon" aria-hidden>🏆</span>
 							<span>Achievements</span>
 						</Link>
+						<button 
+							className="btn btn-secondary" 
+							onClick={handleRequestVerification}
+							disabled={isVerifying}
+						>
+							<span className="icon" aria-hidden>📨</span>
+							<span>{isVerifying ? 'Sending...' : 'Request Verification'}</span>
+						</button>
 					</div>
 				</div>
+
+				{verifyResult && (
+					<p className={`muted verify-status ${verifyResult.includes('success') ? 'success' : 'error'}`}>{verifyResult}</p>
+				)}
 
 				{!farmDetails && (
 					<div className="setup-card">

@@ -36,6 +36,7 @@ export type Notification = {
 }
 
 type FarmerContextShape = {
+	farmerId: string
 	farmerName: string
 	plots: Plot[]
 	farmDetails: FarmDetails | null
@@ -47,6 +48,7 @@ type FarmerContextShape = {
 	addNotification: (message: string, type: 'success' | 'info' | 'warning') => void
 	markNotificationRead: (id: string) => void
 	calculatePlotArea: (points: LatLngPoint[]) => number
+	requestVisitVerification: () => Promise<{ ok: boolean; error?: string }>
 }
 
 const FarmerContext = createContext<FarmerContextShape | undefined>(undefined)
@@ -64,6 +66,28 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const [farmDetails, setFarmDetails] = useState<FarmDetails | null>(null)
 	const [achievements, setAchievements] = useState<Achievement[]>([])
 	const [notifications, setNotifications] = useState<Notification[]>([])
+
+	// Generate / persist a unique Farmer ID (stable across reloads in this browser)
+	const [farmerId] = useState<string>(() => {
+		try {
+			const existing = localStorage.getItem('farmerId')
+			if (existing) return existing
+			const newId = generateFarmerId()
+			localStorage.setItem('farmerId', newId)
+			return newId
+		} catch {
+			// Fallback (no localStorage available)
+			return generateFarmerId()
+		}
+	})
+
+	function generateFarmerId(): string {
+		// Format: FRM-YYYYMMDD-<5 char base36>
+		const d = new Date()
+		const datePart = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('')
+		const rand = Math.random().toString(36).substring(2, 7).toUpperCase()
+		return `FRM-${datePart}-${rand}`
+	}
 
 	const calculatePlotArea = (points: LatLngPoint[]): number => {
 		// Simple approximation using shoelace formula for demo
@@ -174,8 +198,47 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		[plots]
 	)
 
+	// Send farmer + farm data to external verification API
+	const requestVisitVerification = async (): Promise<{ ok: boolean; error?: string }> => {
+		try {
+			const totalArea = plots.reduce((sum, p) => sum + p.area, 0)
+			const payload = {
+				farmerId,
+				farmerName: 'Rahul Kumar',
+				farmDetails, // may be null
+				totalArea,
+				totalCarbonCredits,
+				plots: plots.map(p => ({
+					id: p.id,
+					name: p.name,
+					area: p.area,
+					points: p.points,
+					carbonCredits: p.carbonCredits
+				})),
+				requestedAt: new Date().toISOString()
+			}
+			const resp = await fetch('https://nabard-visitor-backend.onrender.com/api/visit-request', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			})
+			if (!resp.ok) {
+				let errorText: string
+				try { errorText = await resp.text() } catch { errorText = 'Unknown error' }
+				addNotification('Verification request failed', 'warning')
+				return { ok: false, error: errorText }
+			}
+			addNotification('Verification request sent successfully!', 'success')
+			return { ok: true }
+		} catch (e) {
+			addNotification('Network error sending verification request', 'warning')
+			return { ok: false, error: (e as Error).message }
+		}
+	}
+
 	const value = useMemo(
 		() => ({ 
+			farmerId,
 			farmerName: 'Rahul Kumar', 
 			plots, 
 			farmDetails,
@@ -186,9 +249,10 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			updateFarmDetails,
 			addNotification,
 			markNotificationRead,
-			calculatePlotArea
+			calculatePlotArea,
+			requestVisitVerification
 		}),
-		[plots, farmDetails, achievements, notifications, totalCarbonCredits]
+		[farmerId, plots, farmDetails, achievements, notifications, totalCarbonCredits]
 	)
 
 	return <FarmerContext.Provider value={value}>{children}</FarmerContext.Provider>
