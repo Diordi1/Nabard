@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from 'react'
+// API base (allow override via Vite env var at build time)
+const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'https://nabard-visitor-backend.onrender.com'
 
 // Basic geo point type
 export type LatLngPoint = { lat: number; lng: number }
@@ -200,7 +202,7 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		}
 		try {
 			const payload = { farmerId, farmerName: farmerNameState, village: data.village, locationDetails: data.locationDetails, preferredDate: data.preferredDate }
-			const resp = await fetch('https://nabard-visitor-backend.onrender.com/api/visit-request', {
+			const resp = await fetch(`${API_BASE}/api/visit-request`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
