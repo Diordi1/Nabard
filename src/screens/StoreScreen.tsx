@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-
 interface Product {
   id: string;
   name: string;
@@ -11,12 +10,10 @@ interface Product {
   badge?: string;
   imageId: string;
 }
-
 interface PurchaseResult {
   ok: boolean;
   error?: string;
 }
-
 const StoreScreen: React.FC = () => {
   const navigate = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
@@ -25,20 +22,16 @@ const StoreScreen: React.FC = () => {
   );
   const [activeCategory, setActiveCategory] = useState("All Products");
 
-  // Mock function to simulate purchase
   const purchaseItem = (
     itemName: string,
     cost: number,
     payWithCredits: boolean
   ): PurchaseResult => {
-    // In a real app, this would interact with your backend
     console.log(
       `Purchasing ${itemName} for ${
         payWithCredits ? cost + " credits" : "₹" + cost
       }`
     );
-
-    // Simulate random success/failure for demonstration
     const success = Math.random() > 0.2;
 
     if (success) {
@@ -57,7 +50,7 @@ const StoreScreen: React.FC = () => {
       description:
         "High-yield, disease-resistant wheat seeds for optimal harvest",
       badge: "Popular",
-      imageId: "1594020665228-255d12d3084d", // Wheat grains https://images.unsplash.com/photo-1594020665228-255d12d3084d?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+      imageId: "1594020665228-255d12d3084d", //  https://images.unsplash.com/photo-1594020665228-255d12d3084d?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
     },
     {
       id: "fert-1",
@@ -65,7 +58,7 @@ const StoreScreen: React.FC = () => {
       price: 750,
       creditCost: 35,
       description: "100% natural fertilizer for healthier soil and plants",
-      imageId: "1710666184386-9f42d0227237", // Fertilizer/soil   https://images.unsplash.com/photo-1710666184386-9f42d0227237?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+      imageId: "1710666184386-9f42d0227237", //    https://images.unsplash.com/photo-1710666184386-9f42d0227237?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
     },
     {
       id: "pest-1",
@@ -75,7 +68,7 @@ const StoreScreen: React.FC = () => {
       description:
         "Environmentally friendly pesticide that protects without harming",
       badge: "Eco-friendly",
-      imageId: "1615484477919-3a2d3d0fdf44", // Farmer spraying pesticide
+      imageId: "1615484477919-3a2d3d0fdf44",
     },
     {
       id: "plant-1",
@@ -83,7 +76,7 @@ const StoreScreen: React.FC = () => {
       price: 900,
       creditCost: 45,
       description: "Variety pack of fruit saplings for diversified farming",
-      imageId: "1623252161188-87d98a4e4aa4", // Small saplings
+      imageId: "1623252161188-87d98a4e4aa4",
     },
     {
       id: "irrig-1",
@@ -92,7 +85,7 @@ const StoreScreen: React.FC = () => {
       creditCost: 70,
       description: "Water-saving irrigation system for efficient farming",
       badge: "New",
-      imageId: "1738598665698-7fd7af4b5e0c", // Drip irrigation system
+      imageId: "1738598665698-7fd7af4b5e0c",
     },
     {
       id: "comp-1",
@@ -104,7 +97,7 @@ const StoreScreen: React.FC = () => {
     },
   ];
 
-  const totalCarbonCredits = 120; // This would come from your context
+  const totalCarbonCredits = 120; //update krna h dynamically
 
   const handlePurchase = (itemId: string, payWithCredits: boolean) => {
     const item = inventory.find((i) => i.id === itemId);
@@ -120,8 +113,6 @@ const StoreScreen: React.FC = () => {
       setMessageType("success");
       setMessage(`Successfully purchased ${item.name}`);
     }
-
-    // Clear message after 3 seconds
     setTimeout(() => {
       setMessage(null);
     }, 3000);
@@ -207,7 +198,6 @@ const StoreScreen: React.FC = () => {
                   src={`https://images.unsplash.com/photo-${item.imageId}?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80`}
                   alt={item.name}
                   onError={(e) => {
-                    // Fallback image if the URL fails
                     (e.target as HTMLImageElement).src =
                       "https://images.pexels.com/photos/51947/tuscany-grape-field-nature-51947.jpeg";
                   }}
