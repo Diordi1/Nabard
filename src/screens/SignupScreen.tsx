@@ -1,9 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useFarmerContext } from '../context/FarmerContext'
 
 const SignupScreen: React.FC = () => {
 	const navigate = useNavigate()
+	const { updateFarmerProfile } = useFarmerContext()
 	const [formData, setFormData] = useState({
+		name: '',
+		mobile: '',
 		email: '',
 		password: '',
 		confirmPassword: ''
@@ -12,6 +16,16 @@ const SignupScreen: React.FC = () => {
 
 	const validateForm = (): boolean => {
 		const newErrors: Record<string, string> = {}
+
+		if (!formData.name.trim()) {
+			newErrors.name = 'Name is required'
+		}
+
+		if (!formData.mobile.trim()) {
+			newErrors.mobile = 'Mobile number is required'
+		} else if (!/^[0-9]{10}$/.test(formData.mobile)) {
+			newErrors.mobile = 'Enter 10 digit mobile number'
+		}
 
 		if (!formData.email) {
 			newErrors.email = 'Email is required'
@@ -38,7 +52,8 @@ const SignupScreen: React.FC = () => {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault()
 		if (validateForm()) {
-			alert('Account created successfully! Redirecting to dashboard...')
+			updateFarmerProfile({ name: formData.name, mobileNumber: formData.mobile })
+			alert('Account created! Redirecting to dashboard...')
 			navigate('/dashboard')
 		}
 	}
@@ -64,6 +79,32 @@ const SignupScreen: React.FC = () => {
 				</div>
 
 				<form onSubmit={handleSubmit} className="auth-form">
+					<div className="form-group">
+						<label htmlFor="name">Full Name</label>
+						<input
+							type="text"
+							id="name"
+							value={formData.name}
+							onChange={(e) => handleInputChange('name', e.target.value)}
+							className={`form-input ${errors.name ? 'error' : ''}`}
+							placeholder="Enter your full name"
+						/>
+						{errors.name && <span className="error-text">{errors.name}</span>}
+					</div>
+
+					<div className="form-group">
+						<label htmlFor="mobile">Mobile Number</label>
+						<input
+							type="tel"
+							id="mobile"
+							value={formData.mobile}
+							onChange={(e) => handleInputChange('mobile', e.target.value)}
+							className={`form-input ${errors.mobile ? 'error' : ''}`}
+							placeholder="10 digit mobile"
+							maxLength={10}
+						/>
+						{errors.mobile && <span className="error-text">{errors.mobile}</span>}
+					</div>
 					<div className="form-group">
 						<label htmlFor="email">Email Address</label>
 						<input

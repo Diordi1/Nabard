@@ -1,21 +1,27 @@
 import React, { createContext, useContext, useMemo, useState } from 'react'
 
+// Basic geo point type
 export type LatLngPoint = { lat: number; lng: number }
+
+// Plot (kept for potential future mapping features / area based credits)
 export type Plot = { 
 	id: string; 
 	points: LatLngPoint[];
 	name: string;
-	area: number; // in acres
+	area: number; // acres (approx)
 	createdAt: Date;
 	carbonCredits: number;
 }
 
+// Farmer's farm meta details
 export type FarmDetails = {
 	name: string;
 	location: string;
-	totalAcres: number;
+	totalAcres: number; // farm area in acres
 	farmingType: 'organic' | 'conventional' | 'mixed';
 	soilType: string;
+	cropDetails?: string;
+	registeredCoordinates?: string; // optional manual string (e.g. "lat,lng;lat,lng")
 }
 
 export type Achievement = {
@@ -35,29 +41,47 @@ export type Notification = {
 	createdAt: Date;
 }
 
+export type VisitRequest = {
+	id: string;
+	farmerId: string;
+	farmerName: string;
+	village: string;
+	locationDetails: string;
+	preferredDate: string; // YYYY-MM-DD
+	status: 'pending' | 'completed' | 'failed';
+	createdAt: Date;
+	updatedAt: Date;
+	responseMessage?: string;
+}
+
+// Context shape used across screens
 type FarmerContextShape = {
 	farmerId: string
 	farmerName: string
+	mobileNumber: string | null
 	plots: Plot[]
 	farmDetails: FarmDetails | null
 	achievements: Achievement[]
 	notifications: Notification[]
 	totalCarbonCredits: number
+	creditsSpent: number
+	visitRequests: VisitRequest[]
 	addPlot: (newPlotPoints: LatLngPoint[], plotName: string, area: number) => void
 	updateFarmDetails: (details: FarmDetails) => void
+	updateFarmerProfile: (data: { name?: string; mobileNumber?: string }) => void
 	addNotification: (message: string, type: 'success' | 'info' | 'warning') => void
 	markNotificationRead: (id: string) => void
 	calculatePlotArea: (points: LatLngPoint[]) => number
-	requestVisitVerification: () => Promise<{ ok: boolean; error?: string }>
+	requestVisitVerification: (data: { village: string; locationDetails: string; preferredDate: string }) => Promise<{ ok: boolean; error?: string }>
+	markVisitRequestCompleted: (id: string) => void
+	purchaseItem: (itemName: string, cost: number, payWithCredits: boolean) => { ok: boolean; error?: string }
 }
 
 const FarmerContext = createContext<FarmerContextShape | undefined>(undefined)
 
 export const useFarmerContext = (): FarmerContextShape => {
 	const ctx = useContext(FarmerContext)
-	if (!ctx) {
-		throw new Error('useFarmerContext must be used within FarmerProvider')
-	}
+	if (!ctx) throw new Error('useFarmerContext must be used within FarmerProvider')
 	return ctx
 }
 
@@ -66,194 +90,178 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const [farmDetails, setFarmDetails] = useState<FarmDetails | null>(null)
 	const [achievements, setAchievements] = useState<Achievement[]>([])
 	const [notifications, setNotifications] = useState<Notification[]>([])
+	const [farmerNameState, setFarmerNameState] = useState<string>('Rahul Kumar')
+	const [mobileNumber, setMobileNumber] = useState<string | null>(null)
+	const [creditsSpent, setCreditsSpent] = useState<number>(0)
+	const [visitRequests, setVisitRequests] = useState<VisitRequest[]>([])
 
-	// Generate / persist a unique Farmer ID (stable across reloads in this browser)
+	// Stable Farmer ID (local persistence)
 	const [farmerId] = useState<string>(() => {
 		try {
 			const existing = localStorage.getItem('farmerId')
 			if (existing) return existing
-			const newId = generateFarmerId()
-			localStorage.setItem('farmerId', newId)
-			return newId
+			const id = generateFarmerId()
+			localStorage.setItem('farmerId', id)
+			return id
 		} catch {
-			// Fallback (no localStorage available)
 			return generateFarmerId()
 		}
 	})
 
 	function generateFarmerId(): string {
-		// Format: FRM-YYYYMMDD-<5 char base36>
 		const d = new Date()
 		const datePart = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('')
-		const rand = Math.random().toString(36).substring(2, 7).toUpperCase()
+		const rand = Math.random().toString(36).substring(2,7).toUpperCase()
 		return `FRM-${datePart}-${rand}`
 	}
 
+	// Shoelace approximation (very rough) kept for legacy; not used for visit request payload now
 	const calculatePlotArea = (points: LatLngPoint[]): number => {
-		// Simple approximation using shoelace formula for demo
 		if (points.length < 3) return 0
-		
 		let area = 0
 		for (let i = 0; i < points.length; i++) {
 			const j = (i + 1) % points.length
 			area += points[i].lat * points[j].lng
 			area -= points[j].lat * points[i].lng
 		}
-		return Math.abs(area) / 2 * 0.0001 // Rough conversion to acres
+		return Math.abs(area) / 2 * 0.0001 // arbitrary scale to "acres"
+	}
+
+	const addNotification = (message: string, type: 'success' | 'info' | 'warning') => {
+		const n: Notification = { id: `${Date.now()}`, message, type, read: false, createdAt: new Date() }
+		setNotifications(prev => [n, ...prev])
+	}
+
+	const markNotificationRead = (id: string) => {
+		setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
 	}
 
 	const addPlot = (newPlotPoints: LatLngPoint[], plotName: string, area: number) => {
-		if (!newPlotPoints || newPlotPoints.length === 0) return
-		
+		if (!newPlotPoints.length) return
 		const newPlot: Plot = {
 			id: `${Date.now()}`,
 			points: newPlotPoints,
 			name: plotName,
-			area: area,
+			area,
 			createdAt: new Date(),
-			carbonCredits: Math.floor(area * 0.5) // Simple calculation: 0.5 credits per acre
+			carbonCredits: Math.floor(area * 0.5)
 		}
-		
 		setPlots(prev => [newPlot, ...prev])
-		
-		// Check for achievements
 		checkAchievements([newPlot, ...plots])
-		
-		// Add success notification
-		addNotification(`Plot "${plotName}" mapped successfully! Earned ${newPlot.carbonCredits} carbon credits.`, 'success')
+		addNotification(`Plot "${plotName}" saved. +${newPlot.carbonCredits} credits`, 'success')
 	}
 
 	const updateFarmDetails = (details: FarmDetails) => {
 		setFarmDetails(details)
-		addNotification('Farm details updated successfully!', 'success')
+		addNotification('Farm details updated', 'success')
 	}
 
-	const addNotification = (message: string, type: 'success' | 'info' | 'warning') => {
-		const notification: Notification = {
-			id: `${Date.now()}`,
-			message,
-			type,
-			read: false,
-			createdAt: new Date()
-		}
-		setNotifications(prev => [notification, ...prev])
-	}
-
-	const markNotificationRead = (id: string) => {
-		setNotifications(prev => 
-			prev.map(n => n.id === id ? { ...n, read: true } : n)
-		)
+	const updateFarmerProfile = (data: { name?: string; mobileNumber?: string }) => {
+		if (data.name) setFarmerNameState(data.name)
+		if (data.mobileNumber) setMobileNumber(data.mobileNumber)
+		addNotification('Profile updated', 'success')
 	}
 
 	const checkAchievements = (currentPlots: Plot[]) => {
-		const newAchievements: Achievement[] = []
-		
-		// First plot achievement
-		if (currentPlots.length === 1 && achievements.every(a => a.id !== 'first-plot')) {
-			newAchievements.push({
-				id: 'first-plot',
-				title: 'First Steps',
-				description: 'Mapped your first farm plot',
-				icon: '🌱',
-				unlockedAt: new Date(),
-				points: 10
-			})
+		const newOnes: Achievement[] = []
+		if (currentPlots.length === 1 && !achievements.some(a => a.id === 'first-plot')) {
+			newOnes.push({ id:'first-plot', title:'First Steps', description:'Mapped your first plot', icon:'🌱', unlockedAt:new Date(), points:10 })
 		}
-		
-		// Multiple plots achievement
-		if (currentPlots.length >= 3 && achievements.every(a => a.id !== 'multiple-plots')) {
-			newAchievements.push({
-				id: 'multiple-plots',
-				title: 'Plot Master',
-				description: 'Mapped 3 or more farm plots',
-				icon: '🏆',
-				unlockedAt: new Date(),
-				points: 25
-			})
+		if (currentPlots.length >= 3 && !achievements.some(a => a.id === 'multiple-plots')) {
+			newOnes.push({ id:'multiple-plots', title:'Plot Master', description:'Mapped 3+ plots', icon:'🏆', unlockedAt:new Date(), points:25 })
 		}
-		
-		// Large area achievement
-		const totalArea = currentPlots.reduce((sum, plot) => sum + plot.area, 0)
-		if (totalArea >= 10 && achievements.every(a => a.id !== 'large-farm')) {
-			newAchievements.push({
-				id: 'large-farm',
-				title: 'Land Baron',
-				description: 'Total mapped area exceeds 10 acres',
-				icon: '🌍',
-				unlockedAt: new Date(),
-				points: 50
-			})
+		const totalArea = currentPlots.reduce((s,p)=>s+p.area,0)
+		if (totalArea >= 10 && !achievements.some(a => a.id === 'large-farm')) {
+			newOnes.push({ id:'large-farm', title:'Land Baron', description:'10+ acres mapped', icon:'🌍', unlockedAt:new Date(), points:50 })
 		}
-		
-		if (newAchievements.length > 0) {
-			setAchievements(prev => [...prev, ...newAchievements])
-			newAchievements.forEach(achievement => {
-				addNotification(`Achievement unlocked: ${achievement.title}!`, 'success')
-			})
+		if (newOnes.length) {
+			setAchievements(prev => [...prev, ...newOnes])
+			newOnes.forEach(a => addNotification(`Achievement unlocked: ${a.title}`, 'success'))
 		}
 	}
 
-	const totalCarbonCredits = useMemo(() => 
-		plots.reduce((total, plot) => total + plot.carbonCredits, 0), 
-		[plots]
-	)
+	// Carbon credits available (earned - spent)
+	const totalCarbonCredits = useMemo(() => {
+		const earned = plots.reduce((t,p)=>t+p.carbonCredits,0)
+		return earned - creditsSpent
+	}, [plots, creditsSpent])
 
-	// Send farmer + farm data to external verification API
-	const requestVisitVerification = async (): Promise<{ ok: boolean; error?: string }> => {
+	// Visit request (minimal payload as specified)
+	const requestVisitVerification = async (data: { village: string; locationDetails: string; preferredDate: string }): Promise<{ ok: boolean; error?: string }> => {
+		const base: Omit<VisitRequest,'status'> = {
+			id: `${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+			farmerId,
+			farmerName: farmerNameState,
+			village: data.village,
+			locationDetails: data.locationDetails,
+			preferredDate: data.preferredDate,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		}
 		try {
-			const totalArea = plots.reduce((sum, p) => sum + p.area, 0)
-			const payload = {
-				farmerId,
-				farmerName: 'Rahul Kumar',
-				farmDetails, // may be null
-				totalArea,
-				totalCarbonCredits,
-				plots: plots.map(p => ({
-					id: p.id,
-					name: p.name,
-					area: p.area,
-					points: p.points,
-					carbonCredits: p.carbonCredits
-				})),
-				requestedAt: new Date().toISOString()
-			}
+			const payload = { farmerId, farmerName: farmerNameState, village: data.village, locationDetails: data.locationDetails, preferredDate: data.preferredDate }
 			const resp = await fetch('https://nabard-visitor-backend.onrender.com/api/visit-request', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			})
+			let bodyText = ''
+			let bodyJson: any = null
+			try { bodyText = await resp.text(); try { bodyJson = JSON.parse(bodyText) } catch {} } catch {}
 			if (!resp.ok) {
-				let errorText: string
-				try { errorText = await resp.text() } catch { errorText = 'Unknown error' }
-				addNotification('Verification request failed', 'warning')
-				return { ok: false, error: errorText }
+				const msg = bodyJson?.message || bodyText || `HTTP ${resp.status}`
+				addNotification(`Verification request failed (${resp.status})`, 'warning')
+				setVisitRequests(prev => [{ ...base, status:'failed', responseMessage: msg }, ...prev])
+				return { ok:false, error: msg }
 			}
 			addNotification('Verification request sent successfully!', 'success')
-			return { ok: true }
+			setVisitRequests(prev => [{ ...base, status:'pending' }, ...prev])
+			return { ok:true }
 		} catch (e) {
+			const message = (e as Error).message
 			addNotification('Network error sending verification request', 'warning')
-			return { ok: false, error: (e as Error).message }
+			setVisitRequests(prev => [{ ...base, status:'failed', responseMessage: message }, ...prev])
+			return { ok:false, error: message }
 		}
 	}
 
-	const value = useMemo(
-		() => ({ 
-			farmerId,
-			farmerName: 'Rahul Kumar', 
-			plots, 
-			farmDetails,
-			achievements,
-			notifications,
-			totalCarbonCredits,
-			addPlot, 
-			updateFarmDetails,
-			addNotification,
-			markNotificationRead,
-			calculatePlotArea,
-			requestVisitVerification
-		}),
-		[farmerId, plots, farmDetails, achievements, notifications, totalCarbonCredits]
-	)
+	const markVisitRequestCompleted = (id: string) => {
+		setVisitRequests(prev => prev.map(v => v.id === id ? { ...v, status:'completed', updatedAt:new Date() } : v))
+		addNotification('Visit marked completed', 'success')
+	}
+
+	const purchaseItem = (itemName: string, cost: number, payWithCredits: boolean) => {
+		if (payWithCredits) {
+			if (cost > totalCarbonCredits) return { ok:false, error:'Not enough carbon credits' }
+			setCreditsSpent(prev => prev + cost)
+			addNotification(`Purchased ${itemName} for ${cost} credits`, 'success')
+			return { ok:true }
+		}
+		addNotification(`Purchased ${itemName} for ₹${cost}`, 'success')
+		return { ok:true }
+	}
+
+	const value: FarmerContextShape = useMemo(() => ({
+		farmerId,
+		farmerName: farmerNameState,
+		mobileNumber,
+		plots,
+		farmDetails,
+		achievements,
+		notifications,
+		totalCarbonCredits,
+		creditsSpent,
+		visitRequests,
+		addPlot,
+		updateFarmDetails,
+		updateFarmerProfile,
+		addNotification,
+		markNotificationRead,
+		calculatePlotArea,
+		requestVisitVerification,
+		markVisitRequestCompleted,
+		purchaseItem
+	}), [farmerId, farmerNameState, mobileNumber, plots, farmDetails, achievements, notifications, totalCarbonCredits, creditsSpent, visitRequests])
 
 	return <FarmerContext.Provider value={value}>{children}</FarmerContext.Provider>
-} 
+}

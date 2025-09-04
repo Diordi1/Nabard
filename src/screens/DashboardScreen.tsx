@@ -12,25 +12,10 @@ const DashboardScreen: React.FC = () => {
 		achievements, 
 		notifications, 
 		totalCarbonCredits,
-		markNotificationRead,
-		requestVisitVerification
+		markNotificationRead
 	} = useFarmerContext()
-	
-	const [showNotifications, setShowNotifications] = useState(false)
-	const [isVerifying, setIsVerifying] = useState(false)
-	const [verifyResult, setVerifyResult] = useState<string | null>(null)
 
-	const handleRequestVerification = async () => {
-		setIsVerifying(true)
-		setVerifyResult(null)
-		const res = await requestVisitVerification()
-		if (res.ok) {
-			setVerifyResult('Request sent successfully')
-		} else {
-			setVerifyResult(res.error || 'Failed to send request')
-		}
-		setIsVerifying(false)
-	}
+	const [showNotifications, setShowNotifications] = useState(false)
 
 	const unreadNotifications = notifications.filter(n => !n.read)
 	const totalArea = plots.reduce((total, plot) => total + plot.area, 0)
@@ -127,11 +112,7 @@ const DashboardScreen: React.FC = () => {
 				</div>
 
 				<div className="action-buttons">
-					<Link to="/map" className="btn btn-primary btn-lg">
-						<span className="icon" aria-hidden>📍</span>
-						<span>Map New Plot</span>
-					</Link>
-					<div className="secondary-actions">
+					<div className="secondary-actions" style={{width:'100%'}}>
 						<Link to="/profile" className="btn btn-secondary">
 							<span className="icon" aria-hidden>👤</span>
 							<span>My Profile</span>
@@ -140,20 +121,16 @@ const DashboardScreen: React.FC = () => {
 							<span className="icon" aria-hidden>🏆</span>
 							<span>Achievements</span>
 						</Link>
-						<button 
-							className="btn btn-secondary" 
-							onClick={handleRequestVerification}
-							disabled={isVerifying}
-						>
+						<Link to="/store" className="btn btn-secondary">
+							<span className="icon" aria-hidden>🛒</span>
+							<span>Store</span>
+						</Link>
+						<Link to="/visit-request" className="btn btn-secondary">
 							<span className="icon" aria-hidden>📨</span>
-							<span>{isVerifying ? 'Sending...' : 'Request Verification'}</span>
-						</button>
+							<span>Visit Request</span>
+						</Link>
 					</div>
 				</div>
-
-				{verifyResult && (
-					<p className={`muted verify-status ${verifyResult.includes('success') ? 'success' : 'error'}`}>{verifyResult}</p>
-				)}
 
 				{!farmDetails && (
 					<div className="setup-card">

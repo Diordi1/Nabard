@@ -4,7 +4,7 @@ import { useFarmerContext } from '../context/FarmerContext'
 
 const ProfileScreen: React.FC = () => {
 	const navigate = useNavigate()
-	const { farmerName, plots } = useFarmerContext()
+	const { farmerName, farmerId, mobileNumber, farmDetails, plots, totalCarbonCredits, creditsSpent } = useFarmerContext()
 	return (
 		<main className="screen">
 			<header className="app-header">
@@ -15,6 +15,22 @@ const ProfileScreen: React.FC = () => {
 			<section className="content">
 				<div className="card">
 					<h2 className="greeting">{farmerName}</h2>
+					<p className="muted">Farmer ID: <strong>{farmerId}</strong></p>
+					{mobileNumber && <p className="muted">Mobile: {mobileNumber}</p>}
+					{farmDetails && (
+						<div className="profile-farm-details">
+							<p><strong>Farm:</strong> {farmDetails.name}</p>
+							<p><strong>Location:</strong> {farmDetails.location}</p>
+							<p><strong>Area:</strong> {farmDetails.totalAcres} acres</p>
+							<p><strong>Type:</strong> {farmDetails.farmingType}</p>
+							<p><strong>Soil:</strong> {farmDetails.soilType}</p>
+							{farmDetails.cropDetails && <p><strong>Crops:</strong> {farmDetails.cropDetails}</p>}
+						</div>
+					)}
+					<div className="profile-stats-inline">
+						<span>Credits Available: {totalCarbonCredits}</span>
+						<span>  Credits Spent: {creditsSpent}</span>
+					</div>
 					<p className="muted">Your mapped plots</p>
 				</div>
 				<ul className="list">

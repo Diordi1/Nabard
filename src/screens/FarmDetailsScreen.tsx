@@ -10,7 +10,9 @@ const FarmDetailsScreen: React.FC = () => {
 		location: farmDetails?.location || '',
 		totalAcres: farmDetails?.totalAcres || 0,
 		farmingType: farmDetails?.farmingType || 'mixed',
-		soilType: farmDetails?.soilType || ''
+		soilType: farmDetails?.soilType || '',
+		cropDetails: farmDetails?.cropDetails || '',
+		registeredCoordinates: farmDetails?.registeredCoordinates || ''
 	})
 	const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -31,6 +33,10 @@ const FarmDetailsScreen: React.FC = () => {
 
 		if (!formData.soilType.trim()) {
 			newErrors.soilType = 'Soil type is required'
+		}
+
+		if (!formData.cropDetails?.trim()) {
+			newErrors.cropDetails = 'Crop details required'
 		}
 
 		setErrors(newErrors)
@@ -132,6 +138,32 @@ const FarmDetailsScreen: React.FC = () => {
 							placeholder="e.g., Loamy, Clay, Sandy"
 						/>
 						{errors.soilType && <span className="error-text">{errors.soilType}</span>}
+					</div>
+
+					<div className="form-group">
+						<label htmlFor="cropDetails">Crop Details</label>
+						<textarea
+							id="cropDetails"
+							value={formData.cropDetails}
+							onChange={(e) => handleInputChange('cropDetails', e.target.value)}
+							className={`form-input ${errors.cropDetails ? 'error' : ''}`}
+							placeholder="List crops grown, rotation schedule, etc."
+							rows={3}
+						/>
+						{errors.cropDetails && <span className="error-text">{errors.cropDetails}</span>}
+					</div>
+
+					<div className="form-group">
+						<label htmlFor="registeredCoordinates">Farm Coordinates (optional)</label>
+						<textarea
+							id="registeredCoordinates"
+							value={formData.registeredCoordinates}
+							onChange={(e) => handleInputChange('registeredCoordinates', e.target.value)}
+							className="form-input"
+							placeholder="lat,lng; lat,lng; ..."
+							rows={2}
+						/>
+						<p className="muted small">Provide comma separated latitude,longitude pairs if you already know the boundary.</p>
 					</div>
 
 					<button type="submit" className="btn btn-primary btn-lg">
