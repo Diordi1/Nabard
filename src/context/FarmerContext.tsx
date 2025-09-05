@@ -20,11 +20,11 @@ export type Plot = {
 export type FarmDetails = {
   name: string;
   location: string;
-  totalAcres: number; 
+  totalAcres: number;
   farmingType: "organic" | "conventional" | "mixed";
   soilType: string;
-  cropDetails?: string; 
-  registeredCoordinates?: string; 
+  cropDetails?: string;
+  registeredCoordinates?: string;
 };
 
 export type Achievement = {
@@ -50,7 +50,7 @@ export type VisitRequest = {
   farmerName: string;
   village: string;
   locationDetails: string;
-  preferredDate: string; 
+  preferredDate: string;
   status: "pending" | "completed" | "failed";
   createdAt: Date;
   updatedAt: Date;
@@ -235,7 +235,7 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({
       name: plotName,
       area: area,
       createdAt: new Date(),
-      carbonCredits: Math.floor(area * 0.5), 
+      carbonCredits: Math.floor(area * 0.5),
     };
 
     setPlots((prev) => [newPlot, ...prev]);
@@ -336,8 +336,8 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({
   }): Promise<{ ok: boolean; error?: string }> => {
     const base: Omit<VisitRequest, "status"> = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      farmerId, 
-      farmerName: farmerNameState, 
+      farmerId,
+      farmerName: farmerNameState,
       village: data.village,
       locationDetails: data.locationDetails,
       preferredDate: data.preferredDate,
@@ -346,8 +346,8 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     try {
       const payload = {
-        farmerId, 
-        farmerName: farmerNameState, 
+        farmerId,
+        farmerName: farmerNameState,
         village: data.village,
         locationDetails: data.locationDetails,
         preferredDate: data.preferredDate,
@@ -418,7 +418,7 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const value = useMemo(
     () => ({
-      farmerId, 
+      farmerId,
       farmerName: farmerNameState,
       mobileNumber,
       plots,

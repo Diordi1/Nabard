@@ -17,7 +17,7 @@ const ProfileScreen: React.FC = () => {
 			<section className="content">
 				<div className="card">
 					<h2 className="greeting">{user?.name || farmerName}</h2>
-					<p className="muted">Farmer ID: <strong>{user?.farmerId || farmerId}</strong></p>
+					<p className="muted">Farmer ID: <strong>{localStorage.getItem("farmerId")}</strong></p>
 					<p className="muted">Mobile: {user?.mobile || mobileNumber || '—'}</p>
 					{user?.email && <p className="muted">Email: {user.email}</p>}
 					<p className="muted">Provider: {user?.provider || 'local-context'}</p>

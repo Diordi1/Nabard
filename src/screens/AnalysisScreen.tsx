@@ -26,7 +26,7 @@ const AnalysisScreen: React.FC = () => {
 
   // Fetch NDVI classification summary & compute carbon credits
   const loadData = async (isRefresh = false) => {
-    const endpoint = "https://satellitefarm.onrender.com/process-image";
+    const endpoint = "https://satellitefarm.onrender.com/process-image?farmerId="+localStorage.getItem("farmerId");
     const maxAttempts = 3;
     let lastError: any = null;
 
@@ -36,6 +36,7 @@ const AnalysisScreen: React.FC = () => {
         const cached = localStorage.getItem('analysisLastSnapshot');
         if (cached) {
           const parsed = JSON.parse(cached);
+          console.log("Using cached data:", parsed);
           setApiData(parsed);
         }
       } catch {}
@@ -172,8 +173,8 @@ const AnalysisScreen: React.FC = () => {
             <div style={{ width: '50%', minWidth: 120, maxWidth: 220 }}>
             <ImageWidget
               images={[
-                { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80", alt: "Farm 1" },
-                { url: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80", alt: "Farm 2" }
+                { url: apiData.urls[0], alt: "Farm 1" },
+                { url: apiData.urls[1], alt: "Farm 2" }
               ]}
               title="Farm View"
               description="Latest satellite images of your farm."
