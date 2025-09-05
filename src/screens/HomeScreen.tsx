@@ -11,7 +11,7 @@ const HomeScreen: React.FC = () => {
 				<div className="hero">
 					<h2 className="hero-title">Carbon Credits for Farmers</h2>
 					<p className="hero-subtitle">
-						Register your farm and earn carbon credits for sustainable farming practices.
+						Map your farm plots and earn carbon credits for sustainable farming practices.
 					</p>
 				</div>
 				
@@ -31,10 +31,10 @@ const HomeScreen: React.FC = () => {
 					<h3>How it works</h3>
 					<div className="feature-list">
 						<div className="feature-item">
-							<span className="icon" aria-hidden>�</span>
+							<span className="icon" aria-hidden>📍</span>
 							<div>
-								<h4>Register Your Farm</h4>
-								<p>Submit farm details and coordinates for verification</p>
+								<h4>Map Your Plot</h4>
+								<p>Walk around your farm boundary to record GPS coordinates</p>
 							</div>
 						</div>
 						<div className="feature-item">

@@ -1,45 +1,18 @@
-import React, { useState } from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
 
 const LoginScreen: React.FC = () => {
 	const navigate = useNavigate()
-	const [formData, setFormData] = useState({
-		email: '',
-		password: ''
-	})
-	const [errors, setErrors] = useState<Record<string, string>>({})
+	const { user, loginWithGoogle, loginWithPhone, loginEmailPassword } = useAuth()
+	const [email, setEmail] = useState('')
+	const [password, setPassword] = useState('')
+	const [err, setErr] = useState<string | null>(null)
 
-	const validateForm = (): boolean => {
-		const newErrors: Record<string, string> = {}
-
-		if (!formData.email) {
-			newErrors.email = 'Email is required'
-		} else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-			newErrors.email = 'Please enter a valid email'
-		}
-
-		if (!formData.password) {
-			newErrors.password = 'Password is required'
-		}
-
-		setErrors(newErrors)
-		return Object.keys(newErrors).length === 0
-	}
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault()
-		if (validateForm()) {
-			alert('Successfully logged in! Redirecting to dashboard...')
-			navigate('/dashboard')
-		}
-	}
-
-	const handleInputChange = (field: string, value: string) => {
-		setFormData(prev => ({ ...prev, [field]: value }))
-		if (errors[field]) {
-			setErrors(prev => ({ ...prev, [field]: '' }))
-		}
-	}
+	useEffect(() => {
+		if (user) navigate('/dashboard')
+	}, [user, navigate])
 
 	return (
 		<main className="screen">
@@ -54,59 +27,36 @@ const LoginScreen: React.FC = () => {
 					<p className="muted">Access your carbon credit dashboard</p>
 				</div>
 
-				<form onSubmit={handleSubmit} className="auth-form">
+				<form onSubmit={(e) => { e.preventDefault(); const r = loginEmailPassword(email.trim(), password); if(!r.ok) setErr(r.error||'Login failed') }} className="auth-form" style={{ marginBottom: 16 }}>
 					<div className="form-group">
-						<label htmlFor="email">Email Address</label>
-						<input
-							type="email"
-							id="email"
-							value={formData.email}
-							onChange={(e) => handleInputChange('email', e.target.value)}
-							className={`form-input ${errors.email ? 'error' : ''}`}
-							placeholder="Enter your email"
-						/>
-						{errors.email && <span className="error-text">{errors.email}</span>}
+						<label>Email</label>
+						<input className="form-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="you@example.com" />
 					</div>
-
 					<div className="form-group">
-						<label htmlFor="password">Password</label>
-						<input
-							type="password"
-							id="password"
-							value={formData.password}
-							onChange={(e) => handleInputChange('password', e.target.value)}
-							className={`form-input ${errors.password ? 'error' : ''}`}
-							placeholder="Enter your password"
-						/>
-						{errors.password && <span className="error-text">{errors.password}</span>}
+						<label>Password</label>
+						<input className="form-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="••••••" />
 					</div>
-
-					<button type="submit" className="btn btn-primary btn-lg">
+					{err && <p style={{ color:'#b80000', fontSize:12 }}>{err}</p>}
+					<button type="submit" className="btn btn-primary btn-lg" style={{ width:'100%' }}>
 						<span className="icon" aria-hidden>🔐</span>
 						<span>Sign In</span>
 					</button>
 				</form>
-
-				<div className="auth-switch">
-					<p className="muted">Don't have an account?</p>
-					<Link to="/signup" className="btn btn-ghost btn-text">
-						Create Account
-					</Link>
-				</div>
-
-				<div className="divider">
-					<span>or</span>
-				</div>
-
-				<div className="social-auth">
-					<button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
+				<div className="divider"><span>or</span></div>
+				<div className="social-auth" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+					<button className="btn btn-secondary" onClick={loginWithGoogle}>
 						<span className="icon" aria-hidden>🔐</span>
-						<span>Continue with Google</span>
+						<span>Login with Google (Demo)</span>
 					</button>
-					<button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
-						<span className="icon" aria-hidden>📱</span>
-						<span>Continue with Phone</span>
+					<button className="btn btn-secondary" onClick={loginWithPhone}>
+						<span className="icon" aria-hidden>�</span>
+						<span>Login with Phone (Demo)</span>
 					</button>
+				</div>
+
+				<div className="auth-switch" style={{ marginTop: 24 }}>
+					<p className="muted">Need a full account?</p>
+					<Link to="/signup" className="btn btn-text" onClick={(e) => { e.preventDefault(); navigate('/signup'); }}>Create Account</Link>
 				</div>
 			</section>
 		</main>

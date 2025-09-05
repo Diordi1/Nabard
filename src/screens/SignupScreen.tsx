@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useFarmerContext } from '../context/FarmerContext'
+import { useAuth } from '../context/AuthContext'
 
 const SignupScreen: React.FC = () => {
 	const navigate = useNavigate()
-	const { updateFarmerProfile } = useFarmerContext()
+	const { signupLocal, user, loginWithGoogle } = useAuth()
 	const [formData, setFormData] = useState({
 		name: '',
 		mobile: '',
@@ -52,11 +52,18 @@ const SignupScreen: React.FC = () => {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault()
 		if (validateForm()) {
-			updateFarmerProfile({ name: formData.name, mobileNumber: formData.mobile })
+			signupLocal({ name: formData.name, mobile: formData.mobile, email: formData.email, password: formData.password })
 			alert('Account created! Redirecting to dashboard...')
 			navigate('/dashboard')
 		}
 	}
+
+	// Redirect if a user is already authenticated (covers demo View and existing sessions)
+	useEffect(() => {
+		if (user) {
+			try { navigate('/dashboard', { replace: true }) } catch {}
+		}
+	}, [user, navigate])
 
 	const handleInputChange = (field: string, value: string) => {
 		setFormData(prev => ({ ...prev, [field]: value }))
@@ -150,27 +157,19 @@ const SignupScreen: React.FC = () => {
 					</button>
 				</form>
 
-				<div className="auth-switch">
-					<p className="muted">Already have an account?</p>
-					<Link to="/login" className="btn btn-ghost btn-text">
+				<div className="auth-switch" style={{ display:'flex', flexDirection:'column', gap:8 }}>
+					<p className="muted" style={{ marginBottom:4 }}>Already have an account?</p>
+					<button type="button" className="btn btn-text" onClick={() => navigate('/login')}>
 						Sign In
-					</Link>
-				</div>
-
-				<div className="divider">
-					<span>or</span>
-				</div>
-
-				<div className="social-auth">
-					<button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
-						<span className="icon" aria-hidden>🔐</span>
-						<span>Continue with Google</span>
 					</button>
-					<button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
-						<span className="icon" aria-hidden>📱</span>
-						<span>Continue with Phone</span>
+					<div style={{ height:1, background:'#eee', width:'100%', margin:'4px 0' }} />
+					<button type="button" className="btn btn-secondary" onClick={() => { loginWithGoogle(); navigate('/dashboard') }}>
+						<span className="icon" aria-hidden>👁️</span>
+						<span>View Demo</span>
 					</button>
 				</div>
+
+
 
 				<div className="signup-benefits">
 					<h3>Why join Farmer Credit?</h3>

@@ -1,92 +1,127 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useFarmerContext } from '../context/FarmerContext';
+import { Link } from 'react-router-dom';
 
 const VisitRequestScreen: React.FC = () => {
-  const navigate = useNavigate();
-  const { farmerId, farmerName, requestVisitVerification, visitRequests, markVisitRequestCompleted } = useFarmerContext();
-  const [village, setVillage] = useState('');
-  const [locationDetails, setLocationDetails] = useState('');
-  const [preferredDate, setPreferredDate] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [resultMsg, setResultMsg] = useState<string | null>(null);
+  const { visitRequests, requestVisitVerification, farmerId, farmerName } = useFarmerContext();
+
+  return (
+    <div style={{ maxWidth: 820, margin: '0 auto', padding: '1rem' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Visit Requests</h2>
+        <Link to="/dashboard" style={{ textDecoration: 'none', fontSize: 14 }}>&larr; Back</Link>
+      </header>
+      <section style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #ddd', borderRadius: 8 }}>
+        <h4 style={{ marginTop: 0 }}>Create New Request</h4>
+        <VisitRequestForm onSubmit={requestVisitVerification} farmerId={farmerId} farmerName={farmerName} />
+      </section>
+      <section style={{ marginTop: '1.5rem' }}>
+        <h4 style={{ marginBottom: '0.5rem' }}>Previous Requests</h4>
+        {visitRequests.length === 0 && <p style={{ fontSize: 14, color: '#666' }}>No requests yet.</p>}
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.75rem' }}>
+          {visitRequests.map(r => (
+            <li key={r.id} style={{ border: '1px solid #e2e2e2', borderRadius: 8, padding: '0.75rem', background: '#fafafa' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <strong style={{ fontSize: 14 }}>{r.village || 'Village'}</strong>
+                <StatusPill status={r.status} />
+              </div>
+              <div style={{ fontSize: 12, marginTop: 4 }}>Preferred Date: {r.preferredDate}</div>
+              <div style={{ fontSize: 12, marginTop: 2, color: '#444' }}>{r.locationDetails}</div>
+              {r.responseMessage && <div style={{ fontSize: 11, marginTop: 4, color: '#9a4d00' }}>{r.responseMessage}</div>}
+              <div style={{ fontSize: 11, marginTop: 6, color: '#777' }}>Created: {r.createdAt.toLocaleString?.() || new Date(r.createdAt).toLocaleString()}</div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+};
+
+const StatusPill: React.FC<{ status: string }> = ({ status }) => {
+  const colors: Record<string, string> = {
+    pending: '#b78100',
+    completed: '#1b7e31',
+    failed: '#b80000'
+  };
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '2px 8px',
+      fontSize: 11,
+      borderRadius: 12,
+      background: colors[status] || '#555',
+      color: '#fff',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5
+    }}>{status}</span>
+  );
+};
+
+const VisitRequestForm: React.FC<{ onSubmit: (d: { village: string; locationDetails: string; preferredDate: string }) => Promise<any>; farmerId: string; farmerName: string; }> = ({ onSubmit, farmerId, farmerName }) => {
+  const [village, setVillage] = React.useState('');
+  const [locationDetails, setLocationDetails] = React.useState('');
+  const [preferredDate, setPreferredDate] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null); setSuccess(false);
     if (!village || !locationDetails || !preferredDate) {
-      setResultMsg('Please fill all fields');
+      setError('All fields required');
       return;
     }
-    setSubmitting(true);
-    setResultMsg(null);
-    const res = await requestVisitVerification({ village, locationDetails, preferredDate });
-    if (res.ok) {
-      setResultMsg('Visit request submitted');
+    setLoading(true);
+    const res = await onSubmit({ village, locationDetails, preferredDate });
+    setLoading(false);
+    if (!res.ok) {
+      setError(res.error || 'Failed to submit');
+    } else {
+      setSuccess(true);
       setVillage('');
       setLocationDetails('');
       setPreferredDate('');
-    } else {
-      setResultMsg(res.error || 'Failed to submit');
     }
-    setSubmitting(false);
   };
 
   return (
-    <main className="screen">
-      <header className="app-header">
-        <button className="btn btn-ghost" onClick={() => navigate(-1)} aria-label="Go back">←</button>
-        <h1>Visit Request</h1>
-        <div style={{ width: 40 }} />
-      </header>
-      <section className="content">
-        <div className="card">
-          <h2>Request Agent Visit</h2>
-          <p className="muted">Farmer ID: <strong>{farmerId}</strong></p>
-          <p className="muted">Farmer Name: {farmerName}</p>
-          <form onSubmit={handleSubmit} className="form-grid">
-            <label className="form-group">
-              <span>Village</span>
-              <input className="form-input" value={village} onChange={e => setVillage(e.target.value)} placeholder="Village name" />
-            </label>
-            <label className="form-group">
-              <span>Location Details</span>
-              <textarea className="form-input" value={locationDetails} onChange={e => setLocationDetails(e.target.value)} placeholder="Nearby landmarks, route"></textarea>
-            </label>
-            <label className="form-group">
-              <span>Preferred Date</span>
-              <input type="date" className="form-input" value={preferredDate} onChange={e => setPreferredDate(e.target.value)} />
-            </label>
-            <button disabled={submitting} className="btn btn-primary btn-lg" type="submit">
-              {submitting ? 'Submitting...' : 'Submit Request'}
-            </button>
-          </form>
-          {resultMsg && <p className={`muted ${resultMsg.includes('submitted') ? 'success' : 'error'}`}>{resultMsg}</p>}
-        </div>
-
-        <div className="card">
-          <h3>Previous Requests</h3>
-          {visitRequests.length === 0 && <p className="muted">No visit requests yet</p>}
-          <ul className="list">
-            {visitRequests.map(v => (
-              <li key={v.id} className="list-item">
-                <div className="visit-row">
-                  <div>
-                    <strong>{v.village}</strong> • {v.preferredDate}
-                    <div className="muted small">{v.locationDetails}</div>
-                  </div>
-                  <div className={`badge status-${v.status}`}>{v.status}</div>
-                </div>
-                {v.status === 'pending' && (
-                  <button className="btn btn-secondary tiny" onClick={() => markVisitRequestCompleted(v.id)}>Mark Completed</button>
-                )}
-                {v.responseMessage && <div className="muted small">{v.responseMessage}</div>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    </main>
+    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.5rem' }}>
+      <div style={{ fontSize: 12, color: '#555' }}>Farmer: {farmerName} ({farmerId})</div>
+      <div>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600 }}>Village</label>
+        <input value={village} onChange={e => setVillage(e.target.value)} style={inputStyle} placeholder="Village name" />
+      </div>
+      <div>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600 }}>Location Details</label>
+        <textarea value={locationDetails} onChange={e => setLocationDetails(e.target.value)} style={{ ...inputStyle, minHeight: 60 }} placeholder="Nearby landmarks, approach, etc." />
+      </div>
+      <div>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600 }}>Preferred Date</label>
+        <input type="date" value={preferredDate} onChange={e => setPreferredDate(e.target.value)} style={inputStyle} />
+      </div>
+      {error && <div style={{ color: '#b80000', fontSize: 12 }}>{error}</div>}
+      {success && <div style={{ color: '#1b7e31', fontSize: 12 }}>Submitted!</div>}
+      <button type="submit" disabled={loading} style={{
+        background: '#2563eb',
+        color: '#fff',
+        border: 'none',
+        padding: '0.6rem 1rem',
+        borderRadius: 6,
+        cursor: 'pointer',
+        fontSize: 14,
+        opacity: loading ? 0.7 : 1
+      }}>{loading ? 'Sending...' : 'Submit Request'}</button>
+    </form>
   );
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '0.5rem 0.6rem',
+  border: '1px solid #ccc',
+  borderRadius: 6,
+  fontSize: 14
 };
 
 export default VisitRequestScreen;
