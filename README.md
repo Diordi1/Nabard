@@ -4,9 +4,9 @@
 
 ---
 ## Live Resources
-- Farmer Web App: https://your-farmer-app.example.com  <!-- Replace with actual deployed URL -->
-- Agent / Field Ops Portal: https://your-agent-app.example.com  <!-- Replace or remove if not yet built -->
-- Demo / Walkthrough Video: https://your-demo-video-link.example.com  <!-- Add Loom / YouTube link -->
+- Farmer Web App: https://nabard-sigma.vercel.app/analysis  
+- Agent / Field Ops Portal: https://nabard-visitor-frontend.vercel.app/
+- Demo / Walkthrough Video: https://drive.google.com/drive/folders/19OV4AVQqBAUK_F7MirZ2Jku5S3oxwGqV?usp=sharing
 
 (Add screenshots: Dashboard, Analysis (NDVI classes), Visit Request form, Plot Mapping flow.)
 
