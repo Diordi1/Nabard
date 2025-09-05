@@ -29,3 +29,6 @@ coverage/
 # Misc
 *.tgz
 *.zip
+
+# TypeScript incremental build info
+tsconfig.tsbuildinfo
