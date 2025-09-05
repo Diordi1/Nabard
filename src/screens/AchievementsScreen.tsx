@@ -12,7 +12,7 @@ const AchievementsScreen: React.FC = () => {
 
   // API call to process-image endpoint
   useEffect(() => {
-    fetch("https://satellitefarm.onrender.com/process-image")
+    fetch("https://satellitefarm.onrender.com/process-image?farmerId=temp12345")
       .then(res => res.json())
       .then(data => {
         console.log("Process Image API response:", data);
