@@ -91,6 +91,16 @@ type FarmerContextShape = {
     cost: number,
     payWithCredits: boolean
   ) => { ok: boolean; error?: string };
+  // Sync plots from agent-verified backend measurements
+  syncAgentFarmData: (
+    items: Array<{
+      coordinates: LatLngPoint[];
+      area: number;
+      receivedAt?: string;
+      id?: string;
+      name?: string;
+    }>
+  ) => void;
 };
 
 const FarmerContext = createContext<FarmerContextShape | undefined>(undefined);
@@ -407,6 +417,34 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({
     return { ok: true };
   };
 
+  // Merge agent-verified measurements into local plots (non-destructive)
+  const syncAgentFarmData = (
+    items: Array<{
+      coordinates: LatLngPoint[];
+      area: number;
+      receivedAt?: string;
+      id?: string;
+      name?: string;
+    }>
+  ) => {
+    if (!items || items.length === 0) return;
+    const mapped: Plot[] = items.map((it, idx) => ({
+      id: it.id || `agent-${Date.now()}-${idx}`,
+      points: Array.isArray(it.coordinates) ? it.coordinates : [],
+      name: it.name || `Agent Plot ${idx + 1}`,
+      area: typeof it.area === 'number' ? it.area : calculatePlotArea(it.coordinates || []),
+      createdAt: it.receivedAt ? new Date(it.receivedAt) : new Date(),
+      carbonCredits: Math.floor((it.area || 0) * 0.5),
+    }));
+    // Only set if we don't already have user plots to avoid accidental overwrite
+    const nextPlots = plots.length === 0 ? mapped : plots;
+    setPlots(nextPlots);
+    checkAchievements(nextPlots);
+    if (plots.length === 0) {
+      addNotification(`Loaded ${mapped.length} agent-verified plot(s)`, 'info');
+    }
+  };
+
   const updateFarmerProfile = (data: {
     name?: string;
     mobileNumber?: string;
@@ -436,6 +474,7 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({
       calculatePlotArea,
       requestVisitVerification,
       purchaseItem,
+  syncAgentFarmData,
     }),
     [
       farmerId,

@@ -25,6 +25,7 @@ const DashboardScreen: React.FC = () => {
     totalCarbonCredits,
     markNotificationRead,
     requestVisitVerification,
+  syncAgentFarmData,
   } = useFarmerContext();
   const { user } = useAuth();
 
@@ -58,6 +59,19 @@ const DashboardScreen: React.FC = () => {
 
       const data: FarmData[] = await response.json();
       setFarmData(data);
+      // Project the agent-provided coordinates into local plots if we don't have any
+      try {
+        if (Array.isArray(data) && data.length > 0) {
+          const items = data.map(d => ({
+            coordinates: Array.isArray(d.coordinates) ? d.coordinates : [],
+            area: d.area,
+            receivedAt: d.receivedAt,
+            id: undefined,
+            name: 'Verified Plot'
+          }));
+          syncAgentFarmData(items);
+        }
+      } catch {}
       setError(null);
     } catch (err) {
       const errorMessage =
