@@ -1,41 +1,83 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import VegAnalyticsChart from "../components/VegAnalyticsChart";
 import RevenueWidget from "../components/RevenueWidget";
 import ImageWidget from "../components/ImageWidget";
 import RevenueGrowthChart from "../components/RevenueGrowthChart";
 import { useNavigate } from "react-router-dom";
 import { useFarmerContext } from "../context/FarmerContext";
+import { estimateMonthlyCarbon } from "./calculation";
 
 const AchievementsScreen: React.FC = () => {
   const navigate = useNavigate();
   const { achievements, totalCarbonCredits, plots } = useFarmerContext();
 
-  // API call to process-image endpoint
+  // State for remote vegetation/area data
+  const [apiData, setApiData] = useState<any | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [carbonResult, setCarbonResult] = useState<any | null>(null);
+
+  // Fetch NDVI classification summary
   useEffect(() => {
-    fetch("https://satellitefarm.onrender.com/process-image")
-      .then(res => res.json())
-      .then(data => {
-        console.log("Process Image API response:", data);
-      })
-      .catch(err => {
-        console.error("Process Image API error:", err);
-      });
+    const fetchData = async () => {
+      try {
+        setApiError(null);
+        const res = await fetch("https://satellitefarm.onrender.com/process-image");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        setApiData(json);
+
+        // Extract percentages (after snapshot) mapping to our calculation module keys
+        // API structure assumption based on sample: { total_area_ha, classes: { "Bare/Non-Veg": { after_perc }, ... } }
+        const classes = json.classes || {};
+        const percentages = {
+          bare: classes["Bare/Non-Veg"]?.after_perc ?? 0,
+          sparse: classes["Sparse Veg"]?.after_perc ?? 0,
+          moderate: classes["Moderate Veg"]?.after_perc ?? 0,
+          dense: classes["Dense Veg"]?.after_perc ?? 0,
+        };
+        const sum = Object.values(percentages).reduce((a,b)=>a+b,0);
+        // Normalize lightly if rounding drift
+        if (sum > 0 && Math.abs(sum - 100) > 0.05) {
+          Object.keys(percentages).forEach(k => { (percentages as any)[k] = (percentages as any)[k] * 100 / sum; });
+        }
+
+        // Placeholder previous month carbon stock (t C/ha) - could be stored historically later
+        const prevMonthStock = 1.5; 
+
+        try {
+          const result = estimateMonthlyCarbon({
+            areaHa: json.total_area_ha ?? 0,
+            month: new Date().toISOString().slice(0,7),
+            percentages: percentages as any,
+            prevMonthStock_tC_perHa: prevMonthStock
+          });
+          setCarbonResult(result);
+        } catch (calcErr:any) {
+          setApiError(calcErr.message);
+        }
+      } catch (e:any) {
+        setApiError(e.message);
+      }
+    };
+    fetchData();
   }, []);
 
   // Example NDVI/vegetation data for previous and current month (replace with real data logic)
   // These values should be calculated from your actual plot/NDVI data
-  const prevMonthVeg: Record<string, number> = {
-    "Bare/Non-Veg": 2,
-    "Sparse Veg": 3,
-    "Moderate Veg": 1,
-    "Dense Veg": 0,
-  };
-  const currMonthVeg: Record<string, number> = {
-    "Bare/Non-Veg": 1,
-    "Sparse Veg": 2,
-    "Moderate Veg": 2,
-    "Dense Veg": 1,
-  };
+  // Fallback demo values if API not yet loaded
+  const prevMonthVeg: Record<string, number> = apiData ? {
+    "Bare/Non-Veg": apiData.classes?.["Bare/Non-Veg"]?.before_perc ?? 0,
+    "Sparse Veg": apiData.classes?.["Sparse Veg"]?.before_perc ?? 0,
+    "Moderate Veg": apiData.classes?.["Moderate Veg"]?.before_perc ?? 0,
+    "Dense Veg": apiData.classes?.["Dense Veg"]?.before_perc ?? 0,
+  } : { "Bare/Non-Veg": 2, "Sparse Veg": 3, "Moderate Veg": 1, "Dense Veg": 0 };
+
+  const currMonthVeg: Record<string, number> = apiData ? {
+    "Bare/Non-Veg": apiData.classes?.["Bare/Non-Veg"]?.after_perc ?? 0,
+    "Sparse Veg": apiData.classes?.["Sparse Veg"]?.after_perc ?? 0,
+    "Moderate Veg": apiData.classes?.["Moderate Veg"]?.after_perc ?? 0,
+    "Dense Veg": apiData.classes?.["Dense Veg"]?.after_perc ?? 0,
+  } : { "Bare/Non-Veg": 1, "Sparse Veg": 2, "Moderate Veg": 2, "Dense Veg": 1 };
 
   // Example revenue data (replace with real data logic)
   const prevRevenue = 12000;
@@ -61,7 +103,7 @@ const AchievementsScreen: React.FC = () => {
         >
           ←
         </button>
-        <h1>Achievements</h1>
+  <h1>Analysis</h1>
         <div style={{ width: 40 }} />
       </header>
       <section className="content">
@@ -81,6 +123,27 @@ const AchievementsScreen: React.FC = () => {
           </div>
         </div>
         <VegAnalyticsChart prevMonth={prevMonthVeg} currMonth={currMonthVeg} />
+        <div style={{ marginTop: 24, padding: '12px 16px', border: '1px solid #e2e2e2', borderRadius: 8 }}>
+          <h3 style={{ marginTop: 0 }}>Carbon Credit Estimation</h3>
+          {apiError && <p style={{ color: '#b80000', fontSize: 13 }}>Error: {apiError}</p>}
+          {!apiError && !apiData && <p style={{ fontSize: 13 }}>Loading satellite data...</p>}
+          {carbonResult && (
+            <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+              <p style={{ margin: '4px 0' }}>Area Analyzed: <strong>{carbonResult.areaHa.toFixed(2)}</strong> ha</p>
+              <p style={{ margin: '4px 0' }}>Incremental CO2e: {carbonResult.incremental_CO2e_t.toFixed(2)} t</p>
+              <p style={{ margin: '4px 0' }}>Buffer Applied: {carbonResult.buffer_applied_t.toFixed(2)} t</p>
+              <p style={{ margin: '4px 0' }}>Uncertainty Discount: {carbonResult.uncertainty_discount_t.toFixed(2)} t</p>
+              <p style={{ margin: '4px 0' }}><strong>Net Credits (Provisional): {carbonResult.credits_after_buffer_uncertainty_t.toFixed(2)} t CO2e</strong></p>
+              <details style={{ marginTop: 8 }}>
+                <summary style={{ cursor: 'pointer' }}>Method Details</summary>
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ margin: '4px 0' }}>AGB: {carbonResult.AGB_kg_per_ha.toFixed(1)} kg/ha • Current Carbon Stock: {carbonResult.carbon_current_tC_perHa.toFixed(3)} t C/ha</p>
+                  <p style={{ margin: '4px 0' }}>Assumptions: k={carbonResult.assumptions.k}, CF={carbonResult.assumptions.CF}, rootRatio={carbonResult.assumptions.rootRatio}, buffer={carbonResult.assumptions.bufferRate*100}% uncertainty={carbonResult.assumptions.uncertainty*100}%</p>
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
         <div style={{ marginTop: 32 }}>
           <RevenueGrowthChart months={months} revenues={revenues} />
         </div>

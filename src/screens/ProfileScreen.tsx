@@ -1,10 +1,12 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFarmerContext } from '../context/FarmerContext'
+import { useAuth } from '../context/AuthContext'
 
 const ProfileScreen: React.FC = () => {
 	const navigate = useNavigate()
 	const { farmerName, farmerId, mobileNumber, farmDetails, plots, totalCarbonCredits, creditsSpent } = useFarmerContext()
+	const { user, logout } = useAuth()
 	return (
 		<main className="screen">
 			<header className="app-header">
@@ -14,9 +16,12 @@ const ProfileScreen: React.FC = () => {
 			</header>
 			<section className="content">
 				<div className="card">
-					<h2 className="greeting">{farmerName}</h2>
-					<p className="muted">Farmer ID: <strong>{farmerId}</strong></p>
-					{mobileNumber && <p className="muted">Mobile: {mobileNumber}</p>}
+					<h2 className="greeting">{user?.name || farmerName}</h2>
+					<p className="muted">Farmer ID: <strong>{user?.farmerId || farmerId}</strong></p>
+					<p className="muted">Mobile: {user?.mobile || mobileNumber || '—'}</p>
+					{user?.email && <p className="muted">Email: {user.email}</p>}
+					<p className="muted">Provider: {user?.provider || 'local-context'}</p>
+					<button className="btn btn-ghost btn-text" onClick={logout}>Logout</button>
 					{farmDetails && (
 						<div className="profile-farm-details">
 							<p><strong>Farm:</strong> {farmDetails.name}</p>
@@ -29,7 +34,7 @@ const ProfileScreen: React.FC = () => {
 					)}
 					<div className="profile-stats-inline">
 						<span>Credits Available: {totalCarbonCredits}</span>
-						<span>  Credits Spent: {creditsSpent}</span>
+						<span>Credits Spent: {creditsSpent}</span>
 					</div>
 					<p className="muted">Your mapped plots</p>
 				</div>
