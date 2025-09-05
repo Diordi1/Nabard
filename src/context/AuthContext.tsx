@@ -49,8 +49,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = () => {
+    // Reuse stable Google demo farmerId if it exists
+    let fid = '';
+    try {
+      fid = localStorage.getItem('demo_google_farmer_id') || '';
+    } catch {}
+    if (!fid) {
+      fid = generateFarmerId();
+      try { localStorage.setItem('demo_google_farmer_id', fid); } catch {}
+    }
     persist({
-      farmerId: generateFarmerId(),
+      farmerId: fid,
       name: 'Google Demo User',
       email: 'google.demo@example.com',
       provider: 'google',
@@ -59,8 +68,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithPhone = () => {
+    // Reuse stable Phone demo farmerId if it exists
+    let fid = '';
+    try {
+      fid = localStorage.getItem('demo_phone_farmer_id') || '';
+    } catch {}
+    if (!fid) {
+      fid = generateFarmerId();
+      try { localStorage.setItem('demo_phone_farmer_id', fid); } catch {}
+    }
     persist({
-      farmerId: generateFarmerId(),
+      farmerId: fid,
       name: 'Phone Demo User',
       mobile: '9999999999',
       provider: 'phone',

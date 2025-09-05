@@ -94,19 +94,31 @@ export const FarmerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const [creditsSpent, setCreditsSpent] = useState<number>(0)
 	const [visitRequests, setVisitRequests] = useState<VisitRequest[]>([])
 
-	// Generate / persist a unique Farmer ID (stable across reloads in this browser)
-	const [farmerId] = useState<string>(() => {
+	// Generate / persist a unique Farmer ID OR adopt the AuthContext user's ID for consistency
+	const [farmerId, setFarmerId] = useState<string>(() => {
 		try {
+			// If Auth user already present on first render, use that
+			if (user?.farmerId) {
+				localStorage.setItem('farmerId', user.farmerId)
+				return user.farmerId
+			}
 			const existing = localStorage.getItem('farmerId')
 			if (existing) return existing
 			const newId = generateFarmerId()
 			localStorage.setItem('farmerId', newId)
 			return newId
 		} catch {
-			// Fallback (no localStorage available)
 			return generateFarmerId()
 		}
 	})
+
+	// When auth user changes, sync farmerId if different
+	useEffect(() => {
+		if (user?.farmerId && user.farmerId !== farmerId) {
+			setFarmerId(user.farmerId)
+			try { localStorage.setItem('farmerId', user.farmerId) } catch {}
+		}
+	}, [user, farmerId])
 
 	function generateFarmerId(): string {
 		// Format: FRM-YYYYMMDD-<5 char base36>
