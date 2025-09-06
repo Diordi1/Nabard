@@ -99,18 +99,32 @@ Farmer Auth → FarmerContext (ID, plots, requests)
 ```
 
 ---
-## 5. Carbon & NDVI Computation (Simplified)
-Pseudo-pipeline:
-```
-For each class c in {bare, sparse, moderate, dense}:
-  weighted_AGB += (percent_c / 100) * (k * NDVI_midpoint_c)
-AGB_kg_per_ha = weighted_AGB
-Carbon_tC_per_ha = AGB_kg_per_ha * CF * (1 + rootRatio) / 1000
-Incremental_tC = (Current - Previous)
-Incremental_CO2e_t = Incremental_tC * 44/12
-Net = (Incremental_CO2e_t - buffer - uncertainty)
-```
-All coefficients are placeholders pending calibration.
+## 5. NDVI Comparison API (app.py)
+
+The backend NDVI analysis is powered by a FastAPI microservice (app.py) that enables rapid, scalable vegetation classification from satellite NDVI images. 
+
+*Key Features:*
+- *Endpoint:* /compare_ndvi/ (POST)
+- *Inputs:* Two grayscale NDVI images (before & after), uploaded as files.
+- *Processing:*
+  - Converts grayscale to NDVI values (range: -1 to 1).
+  - Classifies each pixel into four vegetation classes:
+    - Bare/Non-Veg: NDVI -1.0 to 0.2
+    - Sparse Veg: NDVI 0.2 to 0.4
+    - Moderate Veg: NDVI 0.4 to 0.6
+    - Dense Veg: NDVI 0.6 to 1.0
+  - Calculates area (in hectares) and percentage for each class, before and after.
+  - Returns a JSON summary of class-wise area and change.
+- *Tech:* FastAPI, NumPy, OpenCV.
+
+*Usage (local):*
+sh
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
+
+Then POST two NDVI images to http://localhost:8000/compare_ndvi/.
+
+*Integration:*  
+The frontend fetches NDVI class summaries from this API to power the Analysis and Carbon Estimation panels.
 
 ---
 ## 6. Local Development
@@ -227,30 +241,5 @@ Screenshots Gallery:
 
 
 
-## 16. NDVI Comparison API (app.py)
 
-The backend NDVI analysis is powered by a FastAPI microservice (app.py) that enables rapid, scalable vegetation classification from satellite NDVI images. 
-
-*Key Features:*
-- *Endpoint:* /compare_ndvi/ (POST)
-- *Inputs:* Two grayscale NDVI images (before & after), uploaded as files.
-- *Processing:*
-  - Converts grayscale to NDVI values (range: -1 to 1).
-  - Classifies each pixel into four vegetation classes:
-    - Bare/Non-Veg: NDVI -1.0 to 0.2
-    - Sparse Veg: NDVI 0.2 to 0.4
-    - Moderate Veg: NDVI 0.4 to 0.6
-    - Dense Veg: NDVI 0.6 to 1.0
-  - Calculates area (in hectares) and percentage for each class, before and after.
-  - Returns a JSON summary of class-wise area and change.
-- *Tech:* FastAPI, NumPy, OpenCV.
-
-*Usage (local):*
-sh
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
-
-Then POST two NDVI images to http://localhost:8000/compare_ndvi/.
-
-*Integration:*  
-The frontend fetches NDVI class summaries from this API to power the Analysis and Carbon Estimation panels.
 
