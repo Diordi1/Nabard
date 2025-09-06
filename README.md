@@ -7,7 +7,7 @@
 - Farmer Web App: https://nabard-sigma.vercel.app/
 - Agent / Field Ops Portal: https://nabard-visitor-frontend.vercel.app/
 - Demo / Walkthrough Video: https://drive.google.com/drive/folders/19OV4AVQqBAUK_F7MirZ2Jku5S3oxwGqV?usp=sharing
-- Data Flow: https://app.eraser.io/workspace/wYWsIAmxccLT5is08jPG?origin=share
+- Data Flow Walkthrough: https://app.eraser.io/workspace/wYWsIAmxccLT5is08jPG?origin=share
 
 
 ---
