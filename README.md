@@ -7,6 +7,8 @@
 - Farmer Web App: https://nabard-sigma.vercel.app/
 - Agent / Field Ops Portal: https://nabard-visitor-frontend.vercel.app/
 - Demo / Walkthrough Video: https://drive.google.com/drive/folders/19OV4AVQqBAUK_F7MirZ2Jku5S3oxwGqV?usp=sharing
+- Data Flow: https://app.eraser.io/workspace/wYWsIAmxccLT5is08jPG?origin=share
+
 
 ---
 ## 1. Overview
@@ -199,7 +201,7 @@ Prototype stage – license to be finalized (default: All rights reserved for no
 
 ---
 ## 14. Contact / Maintainers
-- Core Maintainer: (Add name / email)
+- Core Maintainer: Madem Aditya Prakash , Manas Chaturvedi , Hardik Sahu
 - Issues: GitHub Issues tab
 - Feature Requests: Open an issue with prefix `[Feature]`
 
@@ -209,18 +211,19 @@ Screenshots Gallery:
 
 | Image | Preview |
 |------|---------|
-| Dashboard / App (1) | ![Screenshot 1](pictures/file_2025-09-05_21.09.40.png) |
-| Dashboard / App (2) | ![Screenshot 2](pictures/file_2025-09-05_21.10.01.png) |
-| Dashboard / App (3) | ![Screenshot 3](pictures/file_2025-09-05_21.10.14.png) |
-| Dashboard / App (4) | ![Screenshot 4](pictures/file_2025-09-05_21.10.25.png) |
-| Dashboard / App (5) | ![Screenshot 5](pictures/file_2025-09-05_21.10.38.png) |
-| Dashboard / App (6) | ![Screenshot 6](pictures/file_2025-09-05_21.10.50.png) |
-| Dashboard / App (7) | ![Screenshot 7](pictures/file_2025-09-05_21.11.05.png) |
-| Dashboard / App (8) | ![Screenshot 8](pictures/file_2025-09-05_21.11.34.png) |
-| Dashboard / App (9) | ![Screenshot 9](pictures/file_2025-09-05_21.11.54.png) |
-| Dashboard / App (10) | ![Screenshot 10](pictures/file_2025-09-05_21.12.14.png) |
-| Dashboard / App (11) | ![Screenshot 11](pictures/file_2025-09-05_21.12.28.png) |
-| Dashboard / App (12) | ![Screenshot 12](pictures/file_2025-09-05_21.12.47.png) |
+| Dashboard | ![Screenshot 1](pictures/file_2025-09-05_21.09.40.png) |
+| Analysis | ![Screenshot 2](pictures/file_2025-09-05_21.10.01.png) |
+| Satellite Images | ![Screenshot 3](pictures/file_2025-09-05_21.10.14.png) |
+| Carbon Credit Estimation | ![Screenshot 4](pictures/file_2025-09-05_21.10.25.png) |
+| Request Verification | ![Screenshot 5](pictures/file_2025-09-05_21.10.38.png) |
+| Visit Request Received | ![Screenshot 12](pictures/file_2025-09-05_21.12.47.png) |
+| Visit Request Approved | ![Screenshot 11](pictures/file_2025-09-05_21.12.28.png) |
+| Notifications | ![Screenshot 7](pictures/file_2025-09-05_21.11.05.png) |
+| Plotting the map | ![Screenshot 9](pictures/file_2025-09-05_21.11.54.png) |
+| Area of the plotted Map | ![Screenshot 8](pictures/file_2025-09-05_21.11.34.png) |
+| Obtaining the coordinates of the plot | ![Screenshot 10](pictures/file_2025-09-05_21.12.14.png) |
+| Eco Store | ![Screenshot 6](pictures/file_2025-09-05_21.10.50.png) |
+
 
 
 
