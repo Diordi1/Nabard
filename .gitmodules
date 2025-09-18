@@ -1,0 +1,6 @@
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/manas200/NABARD-VISITOR-FRONTEND
+[submodule "backend"]
+	path = backend
+	url = https://github.com/manas200/NABARD-VISITOR-BACKEND
